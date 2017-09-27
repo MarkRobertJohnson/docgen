@@ -83,6 +83,10 @@ function DocGen (process)
         }
         console.log(chalk.green('Copying templates from "' + sourceTemplatesDir + '" to "' + targetTemplatesDir + '"  '));
         copyDirSync(sourceTemplatesDir, targetTemplatesDir);
+
+        requirePath = path.normalize(`${__dirname}/require`);
+        console.log(`Using require path '${requirePath}'`);
+        copyDirSync(requirePath, path.normalize(`${options.output}/require`));
     }
 
     this.run = function () {
@@ -717,7 +721,15 @@ function DocGen (process)
             promises['docgenPdfFooter'] = writeFile(pdfTempDir+'pdfFooter.html', templates.pdfFooter.html());
         }
         rsvp.hash(promises).then(function (files) {
-            copyDirSync(__dirname+'/require', options.output+'require'); //CSS, JavaScript
+            
+            var requirePath = path.normalize(`${options.input}/require`);
+            if(!fs.existsSync(requirePath)) {
+                console.log(`Custom require path '${requirePath}' does not exist`);
+                requirePath = path.normalize(`${__dirname}/require`);
+                console.log(`Using require path '${requirePath}'`);
+            }
+
+            copyDirSync(requirePath, options.output+'require'); //CSS, JavaScript
             copyDirSync(options.input+'/files', options.output+'files'); //user-attached files and images
             if (options.mathKatex === true) {
                 copyDirSync(__dirname+'/optional/katex', options.output+'require/katex');
