@@ -45,6 +45,22 @@ function DocGen (process)
         if (options.output) {
             options.output = path.normalize(options.output+'/');
         }
+        if (options.templates) {
+            options.templates = path.normalize(options.templates+'/');
+        }
+        if(options.input) {
+            //By default, look at the input dir for templates, if not present then fall back to default templates
+            var templatesDir = path.normalize(path.normalize(options.input) + "/templates");
+            if(!fs.existsSync(templatesDir)) {
+                console.log(chalk.green(`Custom templates dir '${templatesDir}' does not exist`));
+                templatesDir = path.normalize(__dirname + '/templates');
+                console.log(chalk.green(`Use default templates dir '${templatesDir}'`));
+            } else {
+                console.log(chalk.green(`Using custom templates dir '${templatesDir}'`));
+            }
+            options.templates = templatesDir;
+        }
+
 
         //wkhtmltopdf path does not need a trailing slash
         if (options.wkhtmltopdfPath && options.wkhtmltopdfPath !== '') {
@@ -59,6 +75,14 @@ function DocGen (process)
     this.scaffold = function () {
         console.log(chalk.green('Creating scaffold template directory'));
         copyDirSync(__dirname+'/example', options.output);
+
+       var sourceTemplatesDir = __dirname+'/templates';
+       var targetTemplatesDir = path.normalize(path.normalize(options.output) + "/templates");
+        if(options.templates) {
+            sourceTemplatesDir = options.templates;
+        }
+        console.log(chalk.green('Copying templates from "' + sourceTemplatesDir + '" to "' + targetTemplatesDir + '"  '));
+        copyDirSync(sourceTemplatesDir, targetTemplatesDir);
     }
 
     this.run = function () {
@@ -158,13 +182,16 @@ function DocGen (process)
 
     var loadTemplates = function () {
         console.log(chalk.green('Loading templates'));
+
+
+        
         var files = {
-            main: readFile(__dirname+'/templates/main.html'),
-            redirect: readFile(__dirname+'/templates/redirect.html'),
-            webCover: readFile(__dirname+'/templates/webCover.html'),
-            pdfCover: readFile(__dirname+'/templates/pdfCover.html'),
-            pdfHeader: readFile(__dirname+'/templates/pdfHeader.html'),
-            pdfFooter: readFile(__dirname+'/templates/pdfFooter.html'),
+            main: readFile(options.templates+'/main.html'),
+            redirect: readFile(options.templates+'/redirect.html'),
+            webCover: readFile(options.templates+'/webCover.html'),
+            pdfCover: readFile(options.templates+'/pdfCover.html'),
+            pdfHeader: readFile(options.templates+'/pdfHeader.html'),
+            pdfFooter: readFile(options.templates+'/pdfFooter.html'),
         };
         rsvp.hash(files).then(function(files) {
             for (var key in files) {
